@@ -1,8 +1,10 @@
 package main
 
 import (
-	// "net/http"
+	"context"
+	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -43,4 +45,58 @@ func generateJWT(userID string) (string, error) {
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(jwtSecret)
+}
+
+// auth middleware
+func parseJWT(tokenStr string) (string, error) {
+	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+		return jwtSecret, nil
+	}, jwt.WithValidMethods([]string{"HS256"}))
+	if err != nil {
+		return "", err
+	}
+	if !token.Valid {
+		return "", jwt.ErrTokenInvalidClaims
+	}
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return "", jwt.ErrTokenInvalidClaims
+	}
+	sub, ok := claims["sub"].(string)
+	if !ok || sub == "" {
+		return "", jwt.ErrTokenInvalidClaims
+	}
+	return sub, nil
+}
+
+func authMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		header := r.Header.Get("Authorization")
+		if header == "" || !strings.HasPrefix(header, "Bearer ") {
+			writeError(w, http.StatusUnauthorized, "missing or invalid Authorization header")
+			return
+		}
+
+		tokenStr := strings.TrimSpace(strings.TrimPrefix(header, "Bearer "))
+		if tokenStr == "" {
+			writeError(w, http.StatusUnauthorized, "missing token")
+			return
+		}
+
+		userID, err := parseJWT(tokenStr)
+		if err != nil {
+			writeError(w, http.StatusUnauthorized, "invalid token")
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), userIDKey, userID)
+		next(w, r.WithContext(ctx))
+	}
+}
+
+func userIDFromContext(r *http.Request) string {
+	if v, ok := r.Context().Value(userIDKey).(string); ok {
+		return v
+	}
+	return ""
 }

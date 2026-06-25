@@ -137,3 +137,61 @@ func (app *App) LoginHandler(w http.ResponseWriter, r *http.Request){
 
 	writeJSON(w, http.StatusOK, loginResponse{Token: token})
 }
+
+// Tickets
+type createTicketRequest struct {
+	Title string `json:"title"`
+	Description string `json:"description"`
+}
+
+func (app *App) CreateTicketHandler(w http.ResponseWriter, r *http.Request){
+	userID := userIDFromContext(r)
+
+	var req createTicketRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	req.Title = strings.TrimSpace(req.Title)
+	if req.Title == "" {
+		writeError(w, http.StatusBadRequest, "title is required")
+		return
+	}
+
+	now := time.Now().UTC()
+	ticket := &Ticket{
+		ID: generateID(),
+		UserID: userID,
+		Title: req.Title,
+		Description: req.Description,
+		Status: StatusOpen,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+	app.store.createTicket(ticket)
+
+	writeJSON(w, http.StatusCreated, ticket)
+}
+
+func (app *App) ListTicketsHandler(w http.ResponseWriter, r *http.Request){
+	userID := userIDFromContext(r)
+	tickets := app.store.listTicketsByUserID(userID)
+	writeJSON(w, http.StatusOK, tickets)
+}
+
+func (app *App) GetTicketHandler(w http.ResponseWriter, r *http.Request){
+	userID := userIDFromContext(r)
+	id := r.PathValue("id")
+
+	ticket, err := app.store.getTicket(id)
+	if err != nil {
+		writeError(w, http.StatusNotFound, "ticket not found")
+		return
+	}
+	if ticket.UserID != userID {
+		writeError(w, http.StatusForbidden, "access denied")
+		return
+	}
+	writeJSON(w, http.StatusOK, ticket)
+}

@@ -16,6 +16,11 @@ func main(){
 	mux.HandleFunc("POST /auth/register", app.RegisterHandler)
 	mux.HandleFunc("POST /auth/login", app.LoginHandler)
 
+	// Protected routes
+	mux.HandleFunc("POST /tickets", authMiddleware(app.CreateTicketHandler))
+	mux.HandleFunc("GET /tickets", authMiddleware(app.ListTicketsHandler))
+	mux.HandleFunc("GET /tickets/{id}", authMiddleware(app.GetTicketHandler))
+
 	addr := ":8080"
 	log.Printf("Starting server on %s", addr)
 	if err := http.ListenAndServe(addr, mux); err != nil {
