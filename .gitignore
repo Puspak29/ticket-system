@@ -1,0 +1,49 @@
+# Binaries
+
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.out
+
+# Test binaries
+
+*.test
+
+# Go coverage files
+
+*.coverprofile
+coverage.out
+
+# Build directories
+
+bin/
+dist/
+
+# Environment files
+
+.env
+.env.local
+
+# IDEs
+
+.vscode/
+.idea/
+
+# macOS
+
+.DS_Store
+
+# Logs
+
+*.log
+
+# Temporary files
+
+tmp/
+temp/
+
+# Vendor directory (ignore only if you don't commit vendored deps)
+
+vendor/
