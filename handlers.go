@@ -195,3 +195,52 @@ func (app *App) GetTicketHandler(w http.ResponseWriter, r *http.Request){
 	}
 	writeJSON(w, http.StatusOK, ticket)
 }
+
+type updateTicketRequest struct {
+	Status string `json:"status"`
+}
+
+func (app *App) UpdateTicketHandler(w http.ResponseWriter, r *http.Request){
+	userID := userIDFromContext(r)
+	id := r.PathValue("id")
+
+	var req updateTicketRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	req.Status = strings.TrimSpace(strings.ToLower(req.Status))
+
+	if !isValidStatus(req.Status) {
+		writeError(w, http.StatusBadRequest, "status must be one of: open, in_progress, closed")
+		return
+	}
+
+	ticket, err := app.store.getTicket(id)
+	if err != nil {
+		writeError(w, http.StatusNotFound, "ticket not found")
+		return
+	}
+
+	if ticket.UserID != userID {
+		writeError(w, http.StatusForbidden, "access denied")
+		return
+	}
+
+	if ticket.Status == req.Status {
+		writeError(w, http.StatusConflict, "must select different status")
+		return
+	}
+
+	if !canTransition(ticket.Status, req.Status) {
+		writeError(w, http.StatusConflict, "invalid status transition")
+		return
+	}
+
+	ticket.Status = req.Status
+	ticket.UpdatedAt = time.Now().UTC()
+	app.store.updateTicketStatus(ticket)
+
+	writeJSON(w, http.StatusOK, ticket)
+}

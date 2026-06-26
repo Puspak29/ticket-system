@@ -85,3 +85,9 @@ func (s *Store) listTicketsByUserID(userID string) []*Ticket {
 
 	return result
 }
+
+func (s *Store) updateTicketStatus(ticket *Ticket) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.tickets[ticket.ID] = ticket
+}

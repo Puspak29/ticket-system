@@ -20,6 +20,7 @@ func main(){
 	mux.HandleFunc("POST /tickets", authMiddleware(app.CreateTicketHandler))
 	mux.HandleFunc("GET /tickets", authMiddleware(app.ListTicketsHandler))
 	mux.HandleFunc("GET /tickets/{id}", authMiddleware(app.GetTicketHandler))
+	mux.HandleFunc("PATCH /tickets/{id}/status", authMiddleware(app.UpdateTicketHandler))
 
 	addr := ":8080"
 	log.Printf("Starting server on %s", addr)

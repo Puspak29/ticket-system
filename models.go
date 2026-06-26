@@ -24,3 +24,27 @@ type Ticket struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
+
+var allowedTransitions = map[string][]string{
+	StatusOpen: { StatusInProgress, StatusClosed }, // open -> in_progress, closed
+	StatusInProgress: { StatusClosed }, // in_progress -> closed
+	StatusClosed: {}, // closed -> no transitions
+}
+
+func isValidStatus(status string) bool {
+	switch status {
+		case StatusOpen, StatusInProgress, StatusClosed:
+			return true
+		default:
+			return false
+	}
+}
+
+func canTransition(from string, to string) bool {
+	for _, allowed := range allowedTransitions[from] {
+		if allowed == to {
+			return true
+		}
+	}
+	return false
+}
