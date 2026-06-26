@@ -10,11 +10,11 @@ and can only view/update tickets they own.
 
 ---
 
-## 📚 Table of Contents
+## Table of Contents
 
 - [Project Structure](#project-structure)
 - [Run Locally](#run-locally-without-docker)
-- [Run with Docker](#run-locally-with-docker-required-contract)
+- [Run with Docker](#run-locally-with-docker)
 - [API Reference](#api-reference)
 - [Assumptions](#assumptions)
 - [Deployment](#deployment)
@@ -54,7 +54,7 @@ curl http://localhost:8080/health
 # {"status":"ok"}
 ```
 
-## Run Locally with Docker (required contract)
+## Run Locally with Docker
 
 ```bash
 docker build -t ticket-system .
